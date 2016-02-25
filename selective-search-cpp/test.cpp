@@ -17,7 +17,7 @@ int main( int argc, char** argv )
 	{
 		cv::rectangle( img, rect, cv::Scalar( 0, 255, 0 ), 3, 8 );
 	}
-	cv::imwrite( "../example.jpg", img );
+
 	cv::imshow( "result", img );
 	cv::waitKey( 0 );
 
