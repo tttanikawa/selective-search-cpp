@@ -1,6 +1,7 @@
 # C++ Selective Search
 
 This is a C++ implementation of Selective Search [1, 2].
+
 For initial segmentation, this implementation uses Efficient Graph-Based Image Segmentation [3].
 
 ![example](example.jpg)
@@ -29,7 +30,7 @@ To include it in your project, you just need to:
 // Get object proposals
 auto proposals = ss::selectiveSearch( img, scale, sigma, minSize, smallest, largest, distorted );
 
-'''
+```
 
 ## License
 
