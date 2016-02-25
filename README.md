@@ -1,6 +1,6 @@
 # C++ Selective Search
 
-This is a C++ implementation of Selective Search [1, 2].
+This is a simple, small C++ implementation of Selective Search [1, 2] that can be easily integrated into your projects.
 
 For initial segmentation, this implementation uses Efficient Graph-Based Image Segmentation [3].
 
