@@ -39,5 +39,7 @@ MIT
 ## References
 
 [1] J. R. R. Uijlings et al., "Selective Search for Object Recognition", IJCV, 2013
+
 [2] K. E. A. van de Sande et al., "Segmentation As Selective Search for Object Recognition", ICCV, 2011
+
 [3] P. Felzenszwalb et al., "Efficient Graph-Based Image Segmentation", IJCV, 2004
