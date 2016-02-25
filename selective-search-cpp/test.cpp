@@ -9,7 +9,7 @@ int main( int argc, char** argv )
 	cv::Mat img = cv::imread( fileName, cv::IMREAD_COLOR );
 
 	// selective search
-	auto proposals = ss::selectiveSearch( img, 380, 0.8, 100, 600, 25000, 3.0 );
+	auto proposals = ss::selectiveSearch( img, 500, 0.8, 50, 20000, 100000, 2.5 );
 	
 	// do something...
 
@@ -17,7 +17,7 @@ int main( int argc, char** argv )
 	{
 		cv::rectangle( img, rect, cv::Scalar( 0, 255, 0 ), 3, 8 );
 	}
-
+	cv::imwrite( "../example.jpg", img );
 	cv::imshow( "result", img );
 	cv::waitKey( 0 );
 
