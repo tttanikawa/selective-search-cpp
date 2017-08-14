@@ -242,6 +242,7 @@ namespace ss
 			}
 		}
 
+		edges.erase(edges.begin() + num, edges.end());
 		auto universe = segmentGraph( width*height, num, edges, scale );
 
 
