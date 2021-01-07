@@ -29,12 +29,7 @@
 #endif
 
 
-#pragma comment(lib, "opencv_core"	CV_VERSION_STR CV_EXT_STR)
-#pragma comment(lib, "opencv_highgui"	CV_VERSION_STR CV_EXT_STR)
-#pragma comment(lib, "opencv_imgcodecs" CV_VERSION_STR CV_EXT_STR)
-#pragma comment(lib, "opencv_imgproc"	CV_VERSION_STR CV_EXT_STR)
-#pragma comment(lib, "opencv_objdetect"	CV_VERSION_STR CV_EXT_STR)
-#pragma comment(lib, "opencv_ml"	CV_VERSION_STR CV_EXT_STR)
+#pragma comment(lib, "opencv_world"	CV_VERSION_STR CV_EXT_STR)
 
 
 namespace std
@@ -77,6 +72,11 @@ namespace ss
 
 		UniverseElement() : rank( 0 ), size( 1 ), p( 0 ) {}
 		UniverseElement( int rank, int size, int p ) : rank( rank ), size( size ), p( p ) {}
+
+		bool operator ==(const UniverseElement& other) const
+		{
+			return rank == other.rank && p == other.p && size == other.size;
+		}
 	};
 
 
@@ -97,7 +97,13 @@ namespace ss
 			}
 		}
 
+		
 		~Universe() {}
+
+		int findFast(int x)
+		{
+			return elements[x].p;
+		}
 
 		int find( int x )
 		{
@@ -236,6 +242,7 @@ namespace ss
 			}
 		}
 
+		edges.erase(edges.begin() + num, edges.end());
 		auto universe = segmentGraph( width*height, num, edges, scale );
 
 
@@ -275,7 +282,7 @@ namespace ss
 		{
 			for ( int x = 0; x < width; x++ )
 			{
-				segmentated.at<cv::Vec3b>( y, x ) = colors[universe->find( y*width + x )];
+				segmentated.at<cv::Vec3b>( y, x ) = colors[universe->findFast( y*width + x )];
 			}
 		}
 
@@ -291,6 +298,7 @@ namespace ss
 		std::vector<int> labels;
 		std::vector<float> colourHist;
 		std::vector<float> textureHist;
+		std::vector<cv::Vec2i> points;
 
 		Region() {}
 
@@ -389,28 +397,20 @@ namespace ss
 	}
 
 
-	std::vector<float> calcColourHist( const cv::Mat &img, std::shared_ptr<Universe> universe, int label )
+	void calcColourHist( const cv::Mat &img, std::shared_ptr<Universe> universe, int label, Region& region)
 	{
 		std::array<std::vector<unsigned char>, 3> hsv;
 
 		for ( auto &e : hsv )
 		{
-			e.reserve( img.total() );
+			e.reserve(region.points.size());
 		}
 
-		for ( int y = 0; y < img.rows; y++ )
+		for (cv::Vec2i point : region.points)
 		{
-			for ( int x = 0; x < img.cols; x++ )
+			for (int channel = 0; channel < 3; channel++)
 			{
-				if ( universe->find( y*img.cols + x ) != label )
-				{
-					continue;
-				}
-
-				for ( int channel = 0; channel < 3; channel++ )
-				{
-					hsv[channel].push_back( img.at<cv::Vec3b>( y, x )[channel] );
-				}
+				hsv[channel].push_back(img.at<cv::Vec3b>(point[0], point[1])[channel]);
 			}
 		}
 
@@ -420,7 +420,6 @@ namespace ss
 		float range[] = { 0, 256 };
 		const float *ranges[] = { range };
 
-		std::vector<float> features;
 
 		for ( int channel = 0; channel < 3; channel++ )
 		{
@@ -435,36 +434,15 @@ namespace ss
 			std::vector<float> histogram;
 			hist.copyTo( histogram );
 
-			if ( features.empty() )
+			if (region.colourHist.empty() )
 			{
-				features = std::move( histogram );
+				region.colourHist = std::move( histogram );
 			}
 			else
 			{
-				std::copy( histogram.begin(), histogram.end(), std::back_inserter( features ) );
+				std::copy( histogram.begin(), histogram.end(), std::back_inserter(region.colourHist) );
 			}
 		}
-
-		return features;
-	}
-
-
-	int calcSize( const cv::Mat &img, std::shared_ptr<Universe> universe, int label )
-	{
-		int num = 0;
-
-		for ( int y = 0; y < img.rows; y++ )
-		{
-			for ( int x = 0; x < img.cols; x++ )
-			{
-				if ( universe->find( y * img.cols + x ) == label )
-				{
-					num++;
-				}
-			}
-		}
-
-		return num;
 	}
 
 
@@ -482,7 +460,7 @@ namespace ss
 	}
 
 
-	std::vector<float> calcTextureHist( const cv::Mat &img, const cv::Mat &gradient, std::shared_ptr<Universe> universe, int label )
+	void calcTextureHist( const cv::Mat &img, const cv::Mat &gradient, std::shared_ptr<Universe> universe, int label, Region& region )
 	{
 		const int orientations = 8;
 
@@ -492,34 +470,25 @@ namespace ss
 		{
 			for ( auto &ee : e )
 			{
-				ee.reserve( img.total() );
+				ee.reserve(region.points.size());
 			}
 		}
 
-		for ( int y = 0; y < img.rows; y++ )
+		for (cv::Vec2i point : region.points)
 		{
-			for ( int x = 0; x < img.cols; x++ )
+			for (int channel = 0; channel < 3; channel++)
 			{
-				if ( universe->find( y * img.cols + x ) != label )
-				{
-					continue;
-				}
-
-				for ( int channel = 0; channel < 3; channel++ )
-				{
-					int angle = ( int )( gradient.at<cv::Vec3f>( y, x )[channel] / 22.5 ) % orientations;
-					intensity[channel][angle].push_back( img.at<cv::Vec3b>( y, x )[channel] );
-				}
+				int angle = (int)(gradient.at<cv::Vec3f>(point[0], point[1])[channel] / 22.5) % orientations;
+				intensity[channel][angle].push_back(img.at<cv::Vec3b>(point[0], point[1])[channel]);
 			}
 		}
+
 
 		int channels[] = { 0 };
 		const int bins = 10;
 		int histSize[] = { bins };
 		float range[] = { 0, 256 };
 		const float *ranges[] = { range };
-
-		std::vector<float> features;
 
 		for ( int channel = 0; channel < 3; channel++ )
 		{
@@ -536,58 +505,63 @@ namespace ss
 				std::vector<float> histogram;
 				hist.copyTo( histogram );
 
-				if ( features.empty() )
+				if (region.textureHist.empty() )
 				{
-					features = std::move( histogram );
+					region.textureHist = std::move( histogram );
 				}
 				else
 				{
-					std::copy( histogram.begin(), histogram.end(), std::back_inserter( features ) );
+					std::copy( histogram.begin(), histogram.end(), std::back_inserter(region.textureHist) );
 				}
 
 			}
 		}
-
-		return features;
 	}
+
+
 
 
 	std::map<int, Region> extractRegions( const cv::Mat &img, std::shared_ptr<Universe> universe )
 	{
 		std::map<int, Region> R;
+		
 
 		for ( int y = 0; y < img.rows; y++ )
 		{
 			for ( int x = 0; x < img.cols; x++ )
 			{
-				int label = universe->find( y*img.cols + x );
+				int label = universe->findFast( y*img.cols + x );
 
 				if ( R.find( label ) == R.end() )
 				{
 					R[label] = Region( cv::Rect( 100000, 100000, 0, 0 ), label );
 				}
 
-				if ( R[label].rect.x > x )
+				Region& region = R[label];
+
+				if (region.rect.x > x )
 				{
-					R[label].rect.x = x;
+					region.rect.x = x;
 				}
 
-				if ( R[label].rect.y > y )
+				if (region.rect.y > y )
 				{
-					R[label].rect.y = y;
+					region.rect.y = y;
 				}
 
-				if ( R[label].rect.br().x < x )
+				if (region.rect.br().x < x )
 				{
-					R[label].rect.width = x - R[label].rect.x + 1;
+					region.rect.width = x - region.rect.x + 1;
 				}
 
-				if ( R[label].rect.br().y < y )
+				if (region.rect.br().y < y )
 				{
-					R[label].rect.height = y - R[label].rect.y + 1;
+					region.rect.height = y - region.rect.y + 1;
 				}
+				region.points.push_back(cv::Vec2i(y, x));
 			}
 		}
+
 
 		cv::Mat gradient = calcTextureGradient( img );
 
@@ -596,9 +570,9 @@ namespace ss
 
 		for ( auto &labelRegion : R )
 		{
-			labelRegion.second.size = calcSize( img, universe, labelRegion.first );
-			labelRegion.second.colourHist = calcColourHist( hsv, universe, labelRegion.first );
-			labelRegion.second.textureHist = calcTextureHist( img, gradient, universe, labelRegion.first );
+			labelRegion.second.size = labelRegion.second.points.size();
+			calcColourHist( hsv, universe, labelRegion.first, labelRegion.second);
+			calcTextureHist( img, gradient, universe, labelRegion.first, labelRegion.second);
 		}
 
 		return R;
@@ -676,7 +650,6 @@ namespace ss
 		assert( img.channels() == 3 );
 
 		auto universe = generateSegments( img, scale, sigma, minSize );
-
 		int imgSize = img.total();
 
 		auto R = extractRegions( img, universe );

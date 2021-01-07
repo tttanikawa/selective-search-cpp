@@ -213,3 +213,4 @@ ModelManifest.xml
 
 # bug of VS
 *.VC.opendb
+*.db
