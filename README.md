@@ -1,4 +1,5 @@
 # C++ Selective Search
+![C/C++ CI](https://github.com/ukiyoyo/selective-search-cpp/workflows/C/C++%20CI/badge.svg)
 
 This is a simple, small C++ implementation of Selective Search [1, 2] that can be easily integrated into your projects.
 
@@ -8,15 +9,15 @@ For initial segmentation, this implementation uses Efficient Graph-Based Image S
 
 ## Dependencies
 
-- Visual Studio 2013 / GCC 4.8 / Clang 3.2 or later
-	* This implementation relies on C++11 features.
-- OpenCV (2.4.9-)
+- C++11 features
+- OpenCV (4.0-)
 
 ## Usage
 
 You can test this implementation as:
 
 ```sh
+% make
 % ./test
 ```
 
