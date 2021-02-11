@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 
 int main(int argc, char** argv) {
-    std::string fileName = "../deer.jpg";
+    std::string fileName = "./deer.jpg";
     cv::Mat     img      = cv::imread(fileName, cv::IMREAD_COLOR);
 
     // selective search
