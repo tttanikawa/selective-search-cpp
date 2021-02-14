@@ -10,7 +10,7 @@ For initial segmentation, this implementation uses Efficient Graph-Based Image S
 ## Dependencies
 
 - C++11 features
-- OpenCV (4.0-)
+- OpenCV (tested version: 4.0)
 
 ## Usage
 
